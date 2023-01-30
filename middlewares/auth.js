@@ -10,15 +10,17 @@ module.exports = async (req, res, next) => {
     
     try {
         const { uid } = await getAuth.verifyIdToken(token) // verificare se gli utenti sono autenticati
-        const user = await db.collection('users').doc(uid).get()
+        const userRef = db.collection('users').doc(uid)
+        const userDoc = await userRef.get()
 
-        if (!user.exists) {
+        if (!userDoc.exists) {
             return res.status(httpStatus.NOT_FOUND).send('user not found')
         }
 
-        req.locals = { user }
+        req.locals = { userRef, userDoc }
         next()
     } catch(err) {
+        console.log(err)
         res.status(httpStatus.UNAUTHORIZED).send(err.code)
     }
 }

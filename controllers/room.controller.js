@@ -34,7 +34,10 @@ waitingRoom.onSnapshot(async snapshot => {
                 batch.set(members.doc(doc.id), { exists: true }) // aggiungi gli utenti come membri della stanza
                 batch.delete(doc.ref) // elimina gli utenti dalla waiting Room
                 const user = db.collection('users').doc(doc.id)
-                batch.update(user, { currentRoom: newRoomRef }) // aggiorna il campo currentRoom degli utenti
+                batch.update(user, { 
+                    currentRoom: newRoomRef,
+                    isWaiting: false
+                }) // aggiorna il campo currentRoom degli utenti
             })
 
             await batch.commit()
@@ -43,18 +46,22 @@ waitingRoom.onSnapshot(async snapshot => {
 })
 
 exports.match = async (req, res) => {
-    const { user } = req.locals
+    const { userDoc, userRef } = req.locals
 
-    if (user.data().currentRoom) {
+    if (userDoc.data().currentRoom) {
         return res.status(httpStatus.BAD_REQUEST).send('user already in a room') // verificare se l'utente aggiunto alla coda non ha già una currentRoom
     }
+    if (userDoc.data().isWaiting) {
+        return res.status(httpStatus.BAD_REQUEST).send('user already in the waiting room')
+    }
+
+    userRef.update({ isWaiting: true })
 
     const waitingRoom = db.collection('waitingRoom')
-    await waitingRoom.doc(user.id).set({
-        exists: true,
+    await waitingRoom.doc(userDoc.id).set({
         addedAt: admin.firestore.Timestamp.now(),
-        languages: user.data().languages,
-        group: user.data().group
+        languages: userDoc.data().languages,
+        group: userDoc.data().group
     })
     res.status(httpStatus.OK).send('user entered in the waiting room')
 }
