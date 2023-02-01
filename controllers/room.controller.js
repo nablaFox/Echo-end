@@ -40,7 +40,9 @@ waitingRoom.onSnapshot(async snapshot => {
                     
                 batch.update(user, { 
                     currentRoom: newRoomRef,
-                    isWaiting: false
+                    isWaiting: false,
+                    totalPeoples: admin.firestore.FieldValue.increment(last.group - 1),
+                    totalRooms:  admin.firestore.FieldValue.increment(1)
                 }) // aggiorna il campo currentRoom degli utenti
             })
 
@@ -60,7 +62,7 @@ exports.match = async (req, res) => {
     }
 
     userRoomInfoRef.set({ 
-        isWaiting: true 
+        isWaiting: true
     }, { merge: true })
 
     const waitingRoom = db.collection('waitingRoom')
@@ -76,14 +78,28 @@ exports.leave = async (req, res) => {
     const roomRef = db.collection('rooms').doc(req.params.id)
     const members = await roomRef.collection('members').get()
     const batch = db.batch()
+    
+    // hours spent in the room
+    const {since: { seconds: since }} = (await roomRef.get()).data()
+    const now = admin.firestore.Timestamp.now().seconds
+    const totalHours = parseFloat(((now - since) / 3600).toFixed(2))
+
     members.forEach(doc => {
-        const user = db.collection('users').doc(doc.id)
-        const exRooms = user.collection('exRooms')
-        batch.update(user, { currentRoom: null })
+        const userRef = db.collection('users').doc(doc.id)
+        const userRoomInfo = userRef.collection('locked').doc('roomInfo')
+        const exRooms = userRef.collection('exRooms')
+        batch.update(userRoomInfo, { 
+            currentRoom: null,
+            totalHours: admin.firestore.FieldValue.increment(totalHours)
+        })
         batch.set(exRooms.doc(roomRef.id), { ref: roomRef })
     })
 
-    batch.update(roomRef, { open: false })
+    batch.update(roomRef, { 
+        open: false,
+        totalTime: now - since
+    })
+
     await batch.commit()
     res.send('User exited and room closed')
 }
