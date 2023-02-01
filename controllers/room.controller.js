@@ -33,7 +33,11 @@ waitingRoom.onSnapshot(async snapshot => {
             users.forEach(doc => {
                 batch.set(members.doc(doc.id), { exists: true }) // aggiungi gli utenti come membri della stanza
                 batch.delete(doc.ref) // elimina gli utenti dalla waiting Room
-                const user = db.collection('users').doc(doc.id)
+                const user = db.collection('users')
+                    .doc(doc.id)
+                    .collection('locked')
+                    .doc('roomInfo')
+                    
                 batch.update(user, { 
                     currentRoom: newRoomRef,
                     isWaiting: false
@@ -46,16 +50,18 @@ waitingRoom.onSnapshot(async snapshot => {
 })
 
 exports.match = async (req, res) => {
-    const { userDoc, userRef } = req.locals
+    const { userRoomInfoDoc, userRoomInfoRef, userDoc } = req.locals
 
-    if (userDoc.data().currentRoom) {
+    if (userRoomInfoDoc.data() && userRoomInfoDoc.data().currentRoom) {
         return res.status(httpStatus.BAD_REQUEST).send('user already in a room') // verificare se l'utente aggiunto alla coda non ha già una currentRoom
     }
-    if (userDoc.data().isWaiting) {
+    if (userRoomInfoDoc.data() && userRoomInfoDoc.data().isWaiting) {
         return res.status(httpStatus.BAD_REQUEST).send('user already in the waiting room')
     }
 
-    userRef.update({ isWaiting: true })
+    userRoomInfoRef.set({ 
+        isWaiting: true 
+    }, { merge: true })
 
     const waitingRoom = db.collection('waitingRoom')
     await waitingRoom.doc(userDoc.id).set({

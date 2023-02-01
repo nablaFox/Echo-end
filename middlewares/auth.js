@@ -11,13 +11,22 @@ module.exports = async (req, res, next) => {
     try {
         const { uid } = await getAuth.verifyIdToken(token) // verificare se gli utenti sono autenticati
         const userRef = db.collection('users').doc(uid)
+        const userRoomInfoRef = userRef.collection('locked').doc('roomInfo')
+
         const userDoc = await userRef.get()
+        const userRoomInfoDoc = await userRoomInfoRef.get()
 
         if (!userDoc.exists) {
             return res.status(httpStatus.NOT_FOUND).send('user not found')
         }
 
-        req.locals = { userRef, userDoc }
+        req.locals = { 
+            userRef, 
+            userDoc, 
+            userRoomInfoRef,
+            userRoomInfoDoc
+        }
+
         next()
     } catch(err) {
         console.log(err)
