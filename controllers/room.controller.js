@@ -6,6 +6,22 @@ const db = admin.firestore()
 const waitingRoom = db.collection('waitingRoom')
     .orderBy('addedAt', 'desc')
 
+function roomRef(uid = null) {
+    const room = uid ? 
+        db.collection('rooms').doc(uid) : 
+        db.collection('rooms').doc()
+
+    const locked = room.collection('locked')
+    const info = locked.doc('info')
+    const members = locked.doc('members')
+
+    return {
+        room,
+        info,
+        members
+    }
+}
+
 waitingRoom.onSnapshot(async snapshot => {
     snapshot.docChanges().forEach(async change => {
         if (change.type === 'added') {
@@ -13,12 +29,14 @@ waitingRoom.onSnapshot(async snapshot => {
             if (last.group > snapshot.size) return
             
             const batch = db.batch()
-            const newRoomRef = db.collection('rooms').doc()
-            const members = newRoomRef.collection('members')
+            const { room: newRoomRef, info, members } = roomRef()
 
-            batch.set(newRoomRef, { // crea una nuova stanza
+            batch.set(newRoomRef, { 
+                name: 'New Room',
+                info: info
+            })
+            batch.set(info, {
                 open: true,
-                name: 'test name',
                 since: admin.firestore.Timestamp.now()
             })
             
@@ -31,7 +49,9 @@ waitingRoom.onSnapshot(async snapshot => {
             if (users.size < last.group) return // se non ci sono abbastanza utenti termina
 
             users.forEach(doc => {
-                batch.set(members.doc(doc.id), { exists: true }) // aggiungi gli utenti come membri della stanza
+                batch.set(members, { 
+                    [doc.id]: true 
+                }, { merge: true }) // aggiungi gli utenti come membri della stanza
                 batch.delete(doc.ref) // elimina gli utenti dalla waiting Room
                 const user = db.collection('users')
                     .doc(doc.id)
@@ -75,29 +95,34 @@ exports.match = async (req, res) => {
 }
 
 exports.leave = async (req, res) => {
-    const roomRef = db.collection('rooms').doc(req.params.id)
-    const members = await roomRef.collection('members').get()
+    const { room, info, members: membersRef } = roomRef(req.params.id)
     const batch = db.batch()
     
-    // hours spent in the room
-    const {since: { seconds: since }} = (await roomRef.get()).data()
+    // time spent in the room
+    const {since: { seconds: since }} = (await info.get()).data()
     const now = admin.firestore.Timestamp.now().seconds
-    const totalHours = parseFloat(((now - since) / 3600).toFixed(2))
+    const totalTime = (now - since) * 1000
+    
+    // update members
+    const members = (await membersRef.get()).data()
 
-    members.forEach(doc => {
-        const userRef = db.collection('users').doc(doc.id)
+    for (const member in members) {
+        const userRef = db.collection('users').doc(member)
         const userRoomInfo = userRef.collection('locked').doc('roomInfo')
         const exRooms = userRef.collection('exRooms')
-        batch.update(userRoomInfo, { 
+        batch.update(userRoomInfo, {
             currentRoom: null,
-            totalHours: admin.firestore.FieldValue.increment(totalHours)
+            totalTime: admin.firestore.FieldValue.increment(totalTime)
         })
-        batch.set(exRooms.doc(roomRef.id), { ref: roomRef })
-    })
+        batch.set(exRooms.doc(room.id), { 
+            ref: room,
+            addedAt: admin.firestore.Timestamp.now() 
+        })
+    }
 
-    batch.update(roomRef, { 
+    batch.update(info, {
         open: false,
-        totalTime: now - since
+        totalTime: totalTime
     })
 
     await batch.commit()
