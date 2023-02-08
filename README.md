@@ -1,1 +1,1 @@
-# Backend server for Echo application
+# Echo Backend
