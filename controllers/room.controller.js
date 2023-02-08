@@ -105,20 +105,21 @@ exports.leave = async (req, res) => {
     
     // update members
     const members = (await membersRef.get()).data()
-
+    
     for (const member in members) {
         const userRef = db.collection('users').doc(member)
         const userRoomInfo = userRef.collection('locked').doc('roomInfo')
         const exRooms = userRef.collection('exRooms')
-        batch.update(userRoomInfo, {
+        batch.set(userRoomInfo, {
             currentRoom: null,
             totalTime: admin.firestore.FieldValue.increment(totalTime)
-        })
+        }, { merge: true })
+
         batch.set(exRooms.doc(room.id), { 
             ref: room,
             addedAt: admin.firestore.Timestamp.now() 
         })
-    }
+    }   
 
     batch.update(info, {
         open: false,
@@ -126,5 +127,5 @@ exports.leave = async (req, res) => {
     })
 
     await batch.commit()
-    res.send('User exited and room closed')
+    res.status(httpStatus.OK).send('User exited and room closed')
 }
