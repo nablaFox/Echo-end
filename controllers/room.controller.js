@@ -37,7 +37,8 @@ waitingRoom.onSnapshot(async snapshot => {
             })
             batch.set(info, {
                 open: true,
-                since: admin.firestore.Timestamp.now()
+                since: admin.firestore.Timestamp.now(),
+                group: last.group
             })
             
             const users = await snapshot.query
@@ -91,6 +92,7 @@ exports.match = async (req, res) => {
         languages: userDoc.data().languages,
         group: userDoc.data().group
     })
+    console.log('flag')
     res.status(httpStatus.OK).send('user entered in the waiting room')
 }
 
