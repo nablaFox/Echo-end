@@ -6,15 +6,15 @@ const checkAuth = require('../middlewares/auth')
 
 const router = express.Router()
 
+router.param('id', controller.load)
+
 router
     .route('/:id')
     .delete(checkAuth, controller.leave)
 
 router
     .route('/waitingRoom')
-    .post(checkAuth, controller.match)
-
-
+    .post(checkAuth, controller.waitingRoom)
 
 
 module.exports = router
