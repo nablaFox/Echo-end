@@ -12,32 +12,6 @@ exports.load = async (req, res, next, id) => {
     next()
 }
 
-exports.waitingRoom = async (req, res) => {
-    const { user } = res.locals
-
-    if (user.roomInfoDoc.data()?.currentRoom) {
-        return res.status(httpStatus.BAD_REQUEST).send('user already in a room')
-        // verificare se l'utente non ha già una currentRoom
-    }
-    if (user.roomInfoDoc.data()?.isWaiting) {
-        return res.status(httpStatus.BAD_REQUEST).send('user already in the waiting room')
-        // verificare se l'utente non sta già aspettando
-    }
-
-    user.roomInfo.set({ 
-        isWaiting: true
-    }, { merge: true })
-
-    const waitingRoom = db.collection('waitingRoom')
-    await waitingRoom.doc(user.doc.id).set({
-        addedAt: firestore.Timestamp.now(),
-        languages: user.doc.data().languages,
-        group: user.doc.data().group
-    })
-
-    res.status(httpStatus.OK).send('user entered in the waiting room')
-}
-
 exports.leave = async (req, res) => {
     const { room } = res.locals
     const batch = db.batch()
