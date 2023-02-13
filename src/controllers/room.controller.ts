@@ -1,9 +1,10 @@
-const { getRoom } = require('../services/room.service')
-const { getUser } = require('../services/user.service')
-const { db, firestore } = require('../services/firebase')
-const httpStatus = require('http-status')
+import { Request, Response } from "express"
+import httpStatus from "http-status"
+import { getRoom } from "../services/room.service"
+import { getUser } from "../services/user.service"
+import { db, firestore } from "../services/firebase"
 
-exports.load = async (req, res, next, id) => {
+export const load = async (req: Request, res: Response, next: any, id: string) => {
     const room = await getRoom(id)
     if (!room.doc.exists) { 
         return res.status(httpStatus.NOT_FOUND).send('room not found') 
@@ -12,7 +13,7 @@ exports.load = async (req, res, next, id) => {
     next()
 }
 
-exports.leave = async (req, res) => {
+export const leave = async (req: Request, res: Response) => {
     const { room } = res.locals
     const batch = db.batch()
     

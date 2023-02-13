@@ -1,8 +1,9 @@
-const { firestore } = require('../services/firebase')
-const httpStatus = require('http-status')
-const hall = require('../services/hall.service')
+import type { Request, Response } from 'express'
+import httpStatus from 'http-status'
+import { firestore } from '../services/firebase'
+import hall from '../services/hall.service'
 
-exports.enter = async (req, res) => {
+export const enter = async (req: Request, res: Response) => {
     const { user } = res.locals
 
     if (user.roomInfoDoc.data()?.currentRoom) {
@@ -23,4 +24,4 @@ exports.enter = async (req, res) => {
     res.status(httpStatus.OK).send('user entered in the hall')   
 }
 
-exports.leave = () => { }
+export const leave = () => {}

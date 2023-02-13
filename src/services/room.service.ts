@@ -1,6 +1,6 @@
-const { db, firestore } = require('./firebase.js')
+import { db, firestore } from './firebase'
 
-exports.getRoom = async id => {
+export const getRoom = async (id: string) => {
     const ref = db.collection('rooms').doc(id)
     const info = ref.collection('locked').doc('info')
     const members = ref.collection('locked').doc('members')
@@ -19,7 +19,7 @@ exports.getRoom = async id => {
     }
 }
 
-exports.createRoom = async group => {
+export const createRoom = async (group: number) => {
     const ref = db.collection('rooms').doc()
     const info = ref.collection('locked').doc('info')
 
@@ -34,5 +34,5 @@ exports.createRoom = async group => {
         since: firestore.Timestamp.now()
     })
 
-    return await this.getRoom(ref.id)
+    return await getRoom(ref.id)
 }

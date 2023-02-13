@@ -1,7 +1,7 @@
-const { firestore, db } = require('./firebase')
-const { createRoom } = require('./room.service')
-const { getUserRoomRef } = require('./user.service')
-const hall = require('./hall.service')
+import { firestore, db } from "./firebase"
+import { createRoom } from "./room.service"
+import { getUserRoomRef } from "./user.service"
+import hall from './hall.service'
 
 const query = hall.ref.orderBy('addedAt', 'desc')
 

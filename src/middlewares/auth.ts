@@ -1,8 +1,9 @@
-const { getAuth } = require('../services/firebase')
-const { getUser } = require('../services/user.service')
-const httpStatus = require('http-status')
+import type { Request, Response } from 'express'
+import { getAuth } from "../services/firebase"
+import { getUser } from "../services/user.service"
+import httpStatus from "http-status"
 
-module.exports = async (req, res, next) => {
+export default async (req: Request, res: Response, next: any) => {
     const token = req.headers.authorization;
     if (!token) return res.status(httpStatus.UNAUTHORIZED).send('required authorization')
     
@@ -16,7 +17,7 @@ module.exports = async (req, res, next) => {
 
         res.locals.user = user
         next()
-    } catch(err) {
+    } catch(err: any) {
         console.log(err)
         res.status(httpStatus.UNAUTHORIZED).send(err.code)
     }

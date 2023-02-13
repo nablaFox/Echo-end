@@ -1,9 +1,16 @@
-const { db } = require('./firebase')
-const { getUserRoomRef } = require('./user.service')
+import { db } from './firebase'
+import { getUserRoomRef } from './user.service'
+import type { firestore } from 'firebase-admin'
 
 const hall = db.collection('hall')
 
-const enter = async (userId, data) => {
+interface IUser {
+    addedAt: firestore.Timestamp,
+    languages: any,
+    group: number
+}
+
+const enter = async (userId: string, data: IUser) => {
     const batch = db.batch()
 
     batch.set(getUserRoomRef(userId), {
@@ -14,7 +21,7 @@ const enter = async (userId, data) => {
     await batch.commit()
 }
 
-const leave = async userId => {
+const leave = async (userId: string) => {
     const batch = db.batch()
     batch.delete(hall.doc(userId))
     batch.update(getUserRoomRef(userId), { isWaiting: false })
@@ -32,10 +39,9 @@ const clearQueue = async () => {
     await batch.commit()
 }
 
-module.exports = {
+export default {
     ref: hall,
     clearQueue,
     enter,
-    leave,
-    clearQueue
+    leave
 }

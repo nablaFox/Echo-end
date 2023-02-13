@@ -1,8 +1,10 @@
-const express = require('express')
-const cors = require('cors')
-const { port } = require('./config/vars')
-const bodyParser = require('body-parser')
-const routes = require('./routes')
+import express from 'express'
+import cors from 'cors'
+import bodyParser from 'body-parser'
+import routes from './routes'
+
+import { port } from './config/vars'
+
 const { startMatching } = require('./services/match.service')
 
 const app = express()
