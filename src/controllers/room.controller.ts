@@ -25,25 +25,29 @@ export const leave = async (req: Request, res: Response) => {
     // update members
     const members = room.membersDoc.data()
     
-    for (const member in members) {
-        const { roomInfo, exRooms } = await getUser(member)
+    try {
+        for (const member in members) {
+            const { roomInfo, exRooms } = await getUser(member)
+    
+            batch.set(roomInfo, {
+                currentRoom: null,
+                totalTime: firestore.FieldValue.increment(totalTime)
+            }, { merge: true })
+    
+            batch.set(exRooms.doc(room.ref.id), { 
+                ref: room.ref,
+                addedAt: firestore.Timestamp.now() 
+            })
+        }
 
-        batch.set(roomInfo, {
-            currentRoom: null,
-            totalTime: firestore.FieldValue.increment(totalTime)
-        }, { merge: true })
-
-        batch.set(exRooms.doc(room.ref.id), { 
-            ref: room.ref,
-            addedAt: firestore.Timestamp.now() 
+        batch.update(room.info, {
+            open: false,
+            totalTime: totalTime
         })
-    }   
-
-    batch.update(room.info, {
-        open: false,
-        totalTime: totalTime
-    })
-
-    await batch.commit()
-    res.status(httpStatus.OK).send('User exited and room closed')
+    
+        await batch.commit()
+        res.status(httpStatus.OK).send('User exited and room closed')
+    } catch(err) {
+        res.status(httpStatus.INTERNAL_SERVER_ERROR).send(err)
+    }
 }

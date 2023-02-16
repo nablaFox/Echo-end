@@ -5,7 +5,7 @@ import hall from './hall.service'
 
 const query = hall.ref.orderBy('addedAt', 'desc')
 
-exports.startMatching = async () => {
+export const startMatching = async () => {
     await hall.clearQueue()
     query.onSnapshot(async snapshot => {
         snapshot.docChanges().forEach(async change => {

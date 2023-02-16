@@ -14,14 +14,18 @@ export const enter = async (req: Request, res: Response) => {
         return res.status(httpStatus.BAD_REQUEST).send('user already in the hall')
         // verificare se l'utente non sta già aspettando
     }
+    
+    try {
+        await hall.enter(user.doc.id, {
+            addedAt: firestore.Timestamp.now(),
+            languages: user.doc.data().languages,
+            group: user.doc.data().group
+        })
 
-    await hall.enter(user.doc.id, {
-        addedAt: firestore.Timestamp.now(),
-        languages: user.doc.data().languages,
-        group: user.doc.data().group
-    })
-
-    res.status(httpStatus.OK).send('user entered in the hall')   
+        res.status(httpStatus.OK).send('user entered in the hall')
+    } catch(err) {
+        res.status(httpStatus.INTERNAL_SERVER_ERROR).send(err)
+    }
 }
 
 export const leave = () => {}
