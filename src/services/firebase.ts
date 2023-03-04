@@ -1,10 +1,8 @@
-import { firebaseKey } from "../config/vars"
+import { firebaseCredentials } from "../config/vars"
 import admin from 'firebase-admin'
 
-const serviceAccount = JSON.parse(firebaseKey!)
-
 admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
+    credential: admin.credential.cert(firebaseCredentials)
 })
 
 export const getAuth = admin.auth()
